@@ -86,6 +86,11 @@ input[type=text],input[type=number],select{font:inherit;padding:8px 10px;border:
         <label><span data-i18n="ip">IP</span> <input type="text" id="ip" placeholder="192.168.1.10" inputmode="decimal"></label>
         <label><span data-i18n="port">ポート</span> <input type="number" id="port" value="1337" min="1" max="65535"></label>
         <button class="primary" id="btn-load" data-i18n="load">読み込む</button>
+        <button id="btn-ip-save" data-i18n="ipSave">IPを保存</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label><span data-i18n="ipSavedH">保存済み IP</span> <select id="ipsel"></select></label>
+        <button id="btn-ip-del" data-i18n="del">削除</button>
       </div>
       <div class="status" id="home-status"></div>
       <p class="muted" data-i18n="note">PC と PS Vita が同じ Wi-Fi (同じネットワーク) につながっている必要があります。VitaShell の FTP を止めると接続できなくなります。</p>
@@ -140,6 +145,17 @@ input[type=text],input[type=number],select{font:inherit;padding:8px 10px;border:
   </div>
 </div>
 
+<div class="modal-bg" id="upd-bg">
+  <div class="modal">
+    <p class="msg" id="upd-line1" style="text-align:center;font-weight:bold"></p>
+    <p class="msg" id="upd-line2" style="text-align:center"></p>
+    <div class="ops">
+      <button id="upd-later" data-i18n="updLater">あとで</button>
+      <button id="upd-now" class="primary" data-i18n="updNow">更新する</button>
+    </div>
+  </div>
+</div>
+
 <script>
 "use strict";
 var I18N = {
@@ -156,6 +172,21 @@ var I18N = {
 "zh-Hans":{home:"主页",quit:"退出",title:"通过 VitaShell FTP 查看截图",intro:"按文件夹显示 PS Vita 上 ux0:picture/SCREENSHOT 中的照片（jpg / bmp）。显示的照片可以下载和删除。",step1:"在 PS Vita 上打开 VitaShell",step2:"按 SELECT 启动 FTP（屏幕上会显示 IP 地址）",step3:"在下方输入显示的 IP 地址，然后点“加载”",ip:"IP",port:"端口",load:"加载",note:"电脑/手机与 PS Vita 必须连接到同一个 Wi-Fi（同一网络）。在 VitaShell 中停止 FTP 后，本应用会断开连接。",gallery:"图库",summary:"共 {n} 张 · {m} 个文件夹",back:"返回",refresh:"刷新",folder:"文件夹",all:"全部",rootFolder:"SCREENSHOT 根目录",selCount:"已选 {n} 项",zip:"下载所选 (ZIP)",delSel:"删除所选",clearSel:"取消选择",empty:"没有照片（仅显示 jpg / bmp）",folderCount:"{n} 张",selFolderAll:"全选此文件夹",download:"下载",del:"删除",prev:"上一张",next:"下一张",close:"关闭",cancel:"取消",ok:"确定",delConfirm:"要从 PS Vita 删除以下 {n} 项吗？此操作无法撤销。",delDo:"删除",deleted:"已删除 {n} 项",delFailed:"无法删除（{n} 项）",loading:"加载中…",deleting:"删除中…",loadFail:"无法加载",delFail:"删除失败",ipRequired:"请输入 IP 地址",errConnect:"无法连接。请确认 VitaShell 中已启动 FTP，且 IP 和端口正确",errNoFolder:"找不到 ux0:picture/SCREENSHOT 文件夹",errBadIp:"IP 地址无效",errList:"无法获取列表",errBadFile:"文件无效",errNoSel:"未选择文件",dlMsg:"正在下载 {name}…",dlDone:"已下载",dlFail:"无法下载",quitMsg:"已退出。可以关闭此页面。",andMore:"… 还有 {n} 项"},
 "zh-Hant":{home:"主頁",quit:"結束",title:"透過 VitaShell FTP 查看截圖",intro:"依資料夾顯示 PS Vita 上 ux0:picture/SCREENSHOT 中的相片（jpg / bmp）。顯示的相片可以下載和刪除。",step1:"在 PS Vita 上開啟 VitaShell",step2:"按 SELECT 啟動 FTP（畫面上會顯示 IP 位址）",step3:"在下方輸入顯示的 IP 位址，然後點「載入」",ip:"IP",port:"連接埠",load:"載入",note:"電腦/手機與 PS Vita 必須連接到同一個 Wi-Fi（同一個網路）。在 VitaShell 中停止 FTP 後，本應用程式會中斷連線。",gallery:"圖庫",summary:"共 {n} 張 · {m} 個資料夾",back:"返回",refresh:"重新整理",folder:"資料夾",all:"全部",rootFolder:"SCREENSHOT 根目錄",selCount:"已選 {n} 項",zip:"下載所選 (ZIP)",delSel:"刪除所選",clearSel:"取消選取",empty:"沒有相片（僅顯示 jpg / bmp）",folderCount:"{n} 張",selFolderAll:"全選此資料夾",download:"下載",del:"刪除",prev:"上一張",next:"下一張",close:"關閉",cancel:"取消",ok:"確定",delConfirm:"要從 PS Vita 刪除以下 {n} 項嗎？此操作無法復原。",delDo:"刪除",deleted:"已刪除 {n} 項",delFailed:"無法刪除（{n} 項）",loading:"載入中…",deleting:"刪除中…",loadFail:"無法載入",delFail:"刪除失敗",ipRequired:"請輸入 IP 位址",errConnect:"無法連線。請確認 VitaShell 中已啟動 FTP，且 IP 和連接埠正確",errNoFolder:"找不到 ux0:picture/SCREENSHOT 資料夾",errBadIp:"IP 位址無效",errList:"無法取得清單",errBadFile:"檔案無效",errNoSel:"未選取檔案",dlMsg:"正在下載 {name}…",dlDone:"已下載",dlFail:"無法下載",quitMsg:"已結束。可以關閉此畫面。",andMore:"… 還有 {n} 項"}
 };
+var EXTRA = {
+"ja":{updTitle:"新しい版があります",updCur:"現在の版: ",updNew:"新しい版: ",updNow:"更新する",updLater:"あとで",updReopen:"自動で再起動しない場合は、アプリを開き直してください。",updInstall:"ダウンロードしました。このあとスマホのインストール画面が開くので、画面の指示に従ってインストールしてください。",updPerm:"先に、このアプリからのインストールを許可してください。設定画面が開くので許可して、もう一度「更新する」を押してください。",updDoing:"更新をダウンロードしています…",updFail:"更新できませんでした",ipSave:"IPを保存",ipSavedSel:"保存済みIP",ipSavedH:"保存済み IP",ipSaved:"IPを保存しました"},
+"en":{updTitle:"An update is available",updCur:"Current: ",updNew:"New: ",updNow:"Update now",updLater:"Later",updReopen:"If the app does not restart on its own, please reopen it.",updInstall:"Downloaded. The phone's install screen will open next; follow its instructions to install.",updPerm:"First, allow installs from this app. The settings screen will open; allow it, then press “Update now” again.",updDoing:"Downloading the update…",updFail:"The update failed",ipSave:"Save IP",ipSavedSel:"Saved IPs",ipSavedH:"Saved IP",ipSaved:"IP saved"},
+"fr":{updTitle:"Une mise à jour est disponible",updCur:"Version actuelle : ",updNew:"Nouvelle : ",updNow:"Mettre à jour",updLater:"Plus tard",updReopen:"Si l'application ne redémarre pas toute seule, rouvrez-la.",updInstall:"Téléchargé. L'écran d'installation du téléphone va s'ouvrir ; suivez ses instructions.",updPerm:"Autorisez d'abord les installations depuis cette application. L'écran des réglages va s'ouvrir ; autorisez, puis appuyez à nouveau sur « Mettre à jour ».",updDoing:"Téléchargement de la mise à jour…",updFail:"La mise à jour a échoué",ipSave:"Enregistrer l'IP",ipSavedSel:"IP enregistrées",ipSavedH:"IP enregistrée",ipSaved:"IP enregistrée"},
+"de":{updTitle:"Ein Update ist verfügbar",updCur:"Aktuell: ",updNew:"Neu: ",updNow:"Jetzt aktualisieren",updLater:"Später",updReopen:"Falls die App nicht von selbst neu startet, öffnen Sie sie bitte erneut.",updInstall:"Heruntergeladen. Als Nächstes öffnet sich die Installationsanzeige des Handys; folgen Sie den Anweisungen.",updPerm:"Erlauben Sie zuerst Installationen aus dieser App. Der Einstellungsbildschirm öffnet sich; erlauben Sie es und drücken Sie erneut „Jetzt aktualisieren“.",updDoing:"Update wird heruntergeladen…",updFail:"Das Update ist fehlgeschlagen",ipSave:"IP speichern",ipSavedSel:"Gespeicherte IPs",ipSavedH:"Gespeicherte IP",ipSaved:"IP gespeichert"},
+"it":{updTitle:"È disponibile un aggiornamento",updCur:"Attuale: ",updNew:"Nuova: ",updNow:"Aggiorna ora",updLater:"Più tardi",updReopen:"Se l'app non si riavvia da sola, riaprila.",updInstall:"Scaricato. Si aprirà la schermata di installazione del telefono; segui le istruzioni.",updPerm:"Prima consenti le installazioni da questa app. Si aprirà la schermata delle impostazioni; consenti e premi di nuovo «Aggiorna ora».",updDoing:"Download dell'aggiornamento…",updFail:"Aggiornamento non riuscito",ipSave:"Salva IP",ipSavedSel:"IP salvati",ipSavedH:"IP salvato",ipSaved:"IP salvato"},
+"es":{updTitle:"Hay una actualización disponible",updCur:"Actual: ",updNew:"Nueva: ",updNow:"Actualizar ahora",updLater:"Más tarde",updReopen:"Si la app no se reinicia sola, vuelve a abrirla.",updInstall:"Descargado. A continuación se abrirá la pantalla de instalación del teléfono; sigue sus instrucciones.",updPerm:"Primero permite las instalaciones desde esta app. Se abrirá la pantalla de ajustes; permítelo y pulsa de nuevo «Actualizar ahora».",updDoing:"Descargando la actualización…",updFail:"La actualización falló",ipSave:"Guardar IP",ipSavedSel:"IP guardadas",ipSavedH:"IP guardada",ipSaved:"IP guardada"},
+"ru":{updTitle:"Доступно обновление",updCur:"Текущая версия: ",updNew:"Новая версия: ",updNow:"Обновить",updLater:"Позже",updReopen:"Если приложение не перезапустится само, откройте его снова.",updInstall:"Загружено. Далее откроется экран установки на телефоне; следуйте его инструкциям.",updPerm:"Сначала разрешите установку из этого приложения. Откроется экран настроек; разрешите и снова нажмите «Обновить».",updDoing:"Загрузка обновления…",updFail:"Обновление не удалось",ipSave:"Сохранить IP",ipSavedSel:"Сохранённые IP",ipSavedH:"Сохранённый IP",ipSaved:"IP сохранён"},
+"pt":{updTitle:"Há uma atualização disponível",updCur:"Atual: ",updNew:"Nova: ",updNow:"Atualizar agora",updLater:"Depois",updReopen:"Se o app não reiniciar sozinho, abra-o novamente.",updInstall:"Baixado. A tela de instalação do telefone será aberta em seguida; siga as instruções.",updPerm:"Primeiro, permita instalações deste app. A tela de configurações será aberta; permita e pressione “Atualizar agora” novamente.",updDoing:"Baixando a atualização…",updFail:"A atualização falhou",ipSave:"Salvar IP",ipSavedSel:"IPs salvos",ipSavedH:"IP salvo",ipSaved:"IP salvo"},
+"pl":{updTitle:"Dostępna jest aktualizacja",updCur:"Obecna: ",updNew:"Nowa: ",updNow:"Aktualizuj",updLater:"Później",updReopen:"Jeśli aplikacja nie uruchomi się ponownie sama, otwórz ją jeszcze raz.",updInstall:"Pobrano. Następnie otworzy się ekran instalacji w telefonie; postępuj zgodnie z instrukcjami.",updPerm:"Najpierw zezwól na instalacje z tej aplikacji. Otworzy się ekran ustawień; zezwól i ponownie naciśnij „Aktualizuj”.",updDoing:"Pobieranie aktualizacji…",updFail:"Aktualizacja nie powiodła się",ipSave:"Zapisz IP",ipSavedSel:"Zapisane IP",ipSavedH:"Zapisany IP",ipSaved:"Zapisano IP"},
+"ko":{updTitle:"새 버전이 있습니다",updCur:"현재 버전: ",updNew:"새 버전: ",updNow:"업데이트",updLater:"나중에",updReopen:"앱이 자동으로 재시작되지 않으면 다시 열어 주세요.",updInstall:"다운로드했습니다. 이어서 휴대폰의 설치 화면이 열리니 안내에 따라 설치하세요.",updPerm:"먼저 이 앱에서의 설치를 허용하세요. 설정 화면이 열리면 허용한 뒤 “업데이트”를 다시 누르세요.",updDoing:"업데이트 다운로드 중…",updFail:"업데이트할 수 없었습니다",ipSave:"IP 저장",ipSavedSel:"저장된 IP",ipSavedH:"저장된 IP",ipSaved:"IP를 저장했습니다"},
+"zh-Hans":{updTitle:"有新版本",updCur:"当前版本：",updNew:"新版本：",updNow:"立即更新",updLater:"稍后",updReopen:"如果应用没有自动重启，请重新打开它。",updInstall:"已下载。接下来会打开手机的安装界面，请按提示安装。",updPerm:"请先允许从此应用安装。将打开设置界面，允许后请再次点“立即更新”。",updDoing:"正在下载更新…",updFail:"更新失败",ipSave:"保存 IP",ipSavedSel:"已保存的 IP",ipSavedH:"已保存的 IP",ipSaved:"已保存 IP"},
+"zh-Hant":{updTitle:"有新版本",updCur:"目前版本：",updNew:"新版本：",updNow:"立即更新",updLater:"稍後",updReopen:"如果應用程式沒有自動重新啟動，請重新開啟它。",updInstall:"已下載。接下來會開啟手機的安裝畫面，請依提示安裝。",updPerm:"請先允許從此應用程式安裝。將開啟設定畫面，允許後請再次點「立即更新」。",updDoing:"正在下載更新…",updFail:"更新失敗",ipSave:"儲存 IP",ipSavedSel:"已儲存的 IP",ipSavedH:"已儲存的 IP",ipSaved:"已儲存 IP"}
+};
+for (var _lg in EXTRA) { if (I18N[_lg]) { for (var _k in EXTRA[_lg]) I18N[_lg][_k] = EXTRA[_lg][_k]; } }
 var LANGS = ["ja","en","fr","de","it","es","ru","pt","pl","ko","zh-Hans","zh-Hant"];
 function sysLang(){
   var nav = (navigator.language || "en").toLowerCase();
@@ -458,9 +489,115 @@ $("lang-sel").addEventListener("change", function(){
   applyLang();
 });
 
+// 保存済み IP 一覧 (kaiHEN Installer と同じ方式)
+function savedIps(){ try{ return JSON.parse(localStorage.getItem("vita_ips") || "[]"); }catch(e){ return []; } }
+function renderIpSel(){
+  var sel = $("ipsel"); var cur = sel.value;
+  sel.innerHTML = "";
+  var o0 = document.createElement("option"); o0.value = ""; o0.textContent = t("ipSavedSel"); sel.appendChild(o0);
+  savedIps().forEach(function(v){ var o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o); });
+  sel.value = cur;
+}
+function saveIpBtn(){
+  var v = $("ip").value.trim(); if(!v) return;
+  var list = savedIps();
+  if(list.indexOf(v) < 0){ list.push(v); try{ localStorage.setItem("vita_ips", JSON.stringify(list)); }catch(e){} }
+  try{ localStorage.setItem("vita_gal_ip", v); }catch(e){}
+  renderIpSel(); $("ipsel").value = v;
+  setStatus("home-status", t("ipSaved") + ": " + v, false);
+}
+function pickIp(){
+  var sel = $("ipsel"); if(!sel.value) return;
+  $("ip").value = sel.value;
+  try{ localStorage.setItem("vita_gal_ip", sel.value); }catch(e){}
+}
+function delIpBtn(){
+  var sel = $("ipsel"); var v = sel.value; if(!v) return;
+  var list = savedIps().filter(function(x){ return x !== v; });
+  try{ localStorage.setItem("vita_ips", JSON.stringify(list)); }catch(e){}
+  renderIpSel();
+  setStatus("home-status", t("del") + ": " + v, false);
+}
+
+// 自己更新 (kaiHEN Installer と同じ流れ)
+var IS_ANDROID = /Android/.test(navigator.userAgent || "");
+var updLatest = "";
+function updShow(l1, l2){
+  $("upd-line1").textContent = l1 || "";
+  $("upd-line2").textContent = l2 || "";
+  $("upd-bg").classList.add("open");
+}
+function updHide(){ $("upd-bg").classList.remove("open"); }
+function updBtns(mode){ // offer | busy | ok
+  $("upd-now").style.display = mode === "busy" ? "none" : "";
+  $("upd-later").style.display = mode === "offer" ? "" : "none";
+  $("upd-now").textContent = mode === "ok" ? t("ok") : t("updNow");
+}
+function updCheck(){
+  if(window._updChecked) return;
+  window._updChecked = true;
+  fetch("/api/update/check").then(function(r){ return r.json(); }).then(function(j){
+    if(!j.available) return;
+    updLatest = j.latest;
+    updBtns("offer");
+    updShow(t("updTitle"), t("updCur") + j.current + " / " + t("updNew") + j.latest);
+  }).catch(function(){});
+}
+function updApply(){
+  if(IS_ANDROID && window.VitaBridge && window.VitaBridge.canInstall && !window.VitaBridge.canInstall()){
+    window.VitaBridge.requestInstallPermission();
+    updBtns("ok");
+    updShow(t("updTitle"), t("updPerm"));
+    return;
+  }
+  updBtns("busy");
+  updShow(t("updTitle"), t("updDoing"));
+  window._updApk = "";
+  var res = null;
+  var es = new EventSource("/api/update/apply");
+  es.onmessage = function(e){
+    if(e.data.indexOf("UPDATEAPK|") === 0){ window._updApk = e.data.slice(10); return; }
+    if(e.data.indexOf("RESULT|") === 0){ res = e.data === "RESULT|ok"; return; }
+  };
+  es.onerror = function(){
+    es.close();
+    if(res === null) return;
+    if(!res){ updBtns("ok"); updShow(t("updFail"), ""); return; }
+    if(window._updApk){
+      updBtns("ok");
+      updShow(t("updTitle"), t("updInstall"));
+      if(window.VitaBridge && window.VitaBridge.installUpdate) window.VitaBridge.installUpdate();
+    } else {
+      updWaitReload();
+    }
+  };
+}
+function updWaitReload(){
+  var tries = 0;
+  var iv = setInterval(function(){
+    tries++;
+    fetch("/", {cache: "no-store"}).then(function(r){ return r.text(); }).then(function(h){
+      if(h.indexOf("build " + updLatest) >= 0){ clearInterval(iv); location.reload(); }
+    }).catch(function(){});
+    if(tries > 40){ clearInterval(iv); updBtns("ok"); updShow(t("updTitle"), t("updReopen")); }
+  }, 1500);
+}
+$("upd-now").addEventListener("click", function(){
+  if($("upd-now").textContent === t("ok")){ updHide(); return; }
+  updApply();
+});
+$("upd-later").addEventListener("click", updHide);
+$("btn-ip-save").addEventListener("click", saveIpBtn);
+$("btn-ip-del").addEventListener("click", delIpBtn);
+$("ipsel").addEventListener("change", pickIp);
+$("ip").addEventListener("input", function(){
+  try{ localStorage.setItem("vita_gal_ip", $("ip").value.trim()); }catch(e){}
+});
+
 // Android の戻るボタン用: 閉じる/戻ることができたら true
 window.__vitaBack = function(){
   if($("dl-bg").classList.contains("open")) return true;
+  if($("upd-bg").classList.contains("open")){ updHide(); return true; }
   if($("dlg-bg").classList.contains("open")){ closeDlg(); return true; }
   if($("viewer-bg").classList.contains("open")){ closeViewer(); return true; }
   if(!$("page-gallery").classList.contains("hidden")){ showPage("home"); return true; }
@@ -469,7 +606,9 @@ window.__vitaBack = function(){
 
 loadConn();
 applyLang();
+renderIpSel();
 showPage("home");
+updCheck();
 </script>
 </body>
 </html>

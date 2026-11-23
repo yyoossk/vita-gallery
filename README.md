@@ -17,7 +17,8 @@ Browse, download and delete PS Vita screenshots over VitaShell FTP, from a PC or
 - ダウンロード: 1枚ずつ（「ダウンロードしています…」表示つき）/ 選択分をまとめて ZIP
 - 削除: 1枚ずつ / 選択分をまとめて（確認ダイアログつき。Vita 側のファイルが実際に消えます）
 - 12言語対応（日本語 / English / Français / Deutsch / Italiano / Español / Русский / Português / Polski / 한국어 / 简体中文 / 繁體中文）。既定はシステム言語、切替は保存されます
-- 前回入れた IP アドレスを覚えます
+- IP アドレスは前回分を自動で覚えるほか、「IPを保存」で一覧に登録して選べます（kaiHEN Installer と同じ方式）
+- 自己更新: 新しいリリースが出ると起動時に知らせ、そのまま更新できます（kaiHEN Installer と同じ方式。Windows は exe 差し替え＋再起動、Android は APK を落としてインストール画面を開きます）
 
 ## 使い方 / Usage
 

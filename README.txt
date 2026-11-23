@@ -1,4 +1,4 @@
-Vita Gallery (build 20261123-1846)
+Vita Gallery (build 20261123-1856)
 ==================================
 
 PS Vita のスクリーンショットを、VitaShell の FTP 経由で PC / スマホから

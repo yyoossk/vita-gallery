@@ -27,8 +27,11 @@ func main() {
 	} else {
 		exeDir = "."
 	}
+	cleanupUpdateLeftovers()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", pageHandler)
+	mux.HandleFunc("/api/update/check", updateCheckHandler)
+	mux.HandleFunc("/api/update/apply", updateApplyHandler)
 	mux.HandleFunc("/api/check", checkHandler)
 	mux.HandleFunc("/api/list", listHandler)
 	mux.HandleFunc("/api/file", fileHandler)

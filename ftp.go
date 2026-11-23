@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -77,6 +78,20 @@ func (f *ftpReader) readReply() (int, string) {
 	return code, line
 }
 
+// lanDial は LAN 向けのダイヤル。Android シェルが VITA_LAN_IP
+// (Wi-Fi のアドレス) を渡した場合はそこに束縛する: インターネットの
+// 無い Wi-Fi ではモバイルデータが既定経路になり、束縛しないと
+// LAN に届かない (kaiHEN Installer と同じ対策)。失敗時は束縛なしで再試行。
+func lanDial(addr string, timeout time.Duration) (net.Conn, error) {
+	if ip := net.ParseIP(strings.TrimSpace(os.Getenv("VITA_LAN_IP"))); ip != nil && ip.To4() != nil {
+		d := &net.Dialer{LocalAddr: &net.TCPAddr{IP: ip}, Timeout: timeout}
+		if conn, err := d.Dial("tcp", addr); err == nil {
+			return conn, nil
+		}
+	}
+	return net.DialTimeout("tcp", addr, timeout)
+}
+
 type vitaSession struct {
 	ctrl net.Conn
 	rd   *ftpReader
@@ -97,7 +112,7 @@ func vitaConnect(ip string, port int) (*vitaSession, error) {
 	if port <= 0 || port > 65535 {
 		port = 1337
 	}
-	ctrl, err := net.DialTimeout("tcp", net.JoinHostPort(ip, strconv.Itoa(port)), 8*time.Second)
+	ctrl, err := lanDial(net.JoinHostPort(ip, strconv.Itoa(port)), 8*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +189,7 @@ func (s *vitaSession) pasv() (net.Conn, error) {
 		n[k] = v
 	}
 	host := fmt.Sprintf("%d.%d.%d.%d", n[0], n[1], n[2], n[3])
-	return net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(n[4]*256+n[5])), 10*time.Second)
+	return lanDial(net.JoinHostPort(host, strconv.Itoa(n[4]*256+n[5])), 10*time.Second)
 }
 
 func (s *vitaSession) transfer(cmd string) (net.Conn, error) {

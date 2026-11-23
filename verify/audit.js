@@ -33,6 +33,8 @@ function makeDom(navLang) {
       }
       window.URL.createObjectURL = () => "blob:fake";
       window.URL.revokeObjectURL = () => {};
+      window.EventSource = function(url) { this.url = url; this.closed = false; window.__es = this; };
+      window.EventSource.prototype.close = function() { this.closed = true; };
       window.fetch = (url, opts) => {
         const u = String(url);
         if (u.startsWith("/api/list")) {
@@ -183,6 +185,70 @@ function makeDom(navLang) {
   assert(window.__vitaBack() === true, "__vitaBack true on gallery");
   assert(!d.getElementById("page-home").classList.contains("hidden"), "__vitaBack went home");
   assert(window.__vitaBack() === false, "__vitaBack false on home");
+
+  // ---- 3) 保存済み IP (kaiHEN と同じ方式) ----
+  d.getElementById("ip").value = "192.168.1.20";
+  d.getElementById("btn-ip-save").click();
+  await tick();
+  assert((window.localStorage.getItem("vita_ips") || "").includes("192.168.1.20"), "ip saved to vita_ips");
+  assert(d.getElementById("ipsel").options.length === 2, "ipsel has placeholder + 1 entry");
+  assert(d.getElementById("home-status").textContent.includes("IPを保存しました"), "save feedback shown");
+  d.getElementById("ip").value = "";
+  const ipsel = d.getElementById("ipsel");
+  ipsel.value = "192.168.1.20";
+  ipsel.dispatchEvent(new window.Event("change"));
+  await tick();
+  assert(d.getElementById("ip").value === "192.168.1.20", "picking saved ip fills the input");
+  assert(window.localStorage.getItem("vita_gal_ip") === "192.168.1.20", "pick updates last ip");
+  d.getElementById("btn-ip-del").click();
+  await tick();
+  assert(JSON.parse(window.localStorage.getItem("vita_ips") || "[]").length === 0, "ip removed from vita_ips");
+  assert(d.getElementById("ipsel").options.length === 1, "ipsel back to placeholder only");
+  // 入力しただけでも前回 IP として残る
+  d.getElementById("ip").value = "10.0.0.9";
+  d.getElementById("ip").dispatchEvent(new window.Event("input"));
+  assert(window.localStorage.getItem("vita_gal_ip") === "10.0.0.9", "typing updates last ip");
+
+  // ---- 4) 自己更新フロー ----
+  const realFetch = window.fetch;
+  window.fetch = (url) => {
+    const u = String(url);
+    if (u.startsWith("/api/update/check")) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ available: true, current: "20000101-0000", latest: "29990101-0000" }) });
+    }
+    if (u === "/") {
+      return Promise.resolve({ ok: true, text: () => Promise.resolve("<html>build 29990101-0000</html>") });
+    }
+    return realFetch(url);
+  };
+  window._updChecked = false;
+  window.updCheck();
+  await tick(); await tick();
+  assert(d.getElementById("upd-bg").classList.contains("open"), "update modal opens when available");
+  assert(d.getElementById("upd-line2").textContent.includes("29990101-0000"), "modal shows latest stamp");
+  assert(d.getElementById("upd-now").textContent === "更新する", "update now button label (ja)");
+  // 適用: SSE が RESULT|ok を返し、APK マーカーなし → 再読み込み待ちに入る
+  d.getElementById("upd-now").click();
+  await tick();
+  assert(window.__es && window.__es.url === "/api/update/apply", "EventSource opened for apply");
+  window.__es.onmessage({ data: "RESULT|ok" });
+  window.__es.onerror();
+  assert(window.__es.closed === true, "EventSource closed after result");
+  await tick(1700); // updWaitReload のポーリングが新しいページを検出する
+  // 失敗経路: RESULT|ng で「更新できませんでした」+ OK モード
+  window.updApply();
+  await tick();
+  window.__es.onmessage({ data: "RESULT|ng" });
+  window.__es.onerror();
+  await tick();
+  assert(d.getElementById("upd-line1").textContent === window.t("updFail"), "failure shows updFail");
+  assert(d.getElementById("upd-now").textContent === window.t("ok"), "ok-mode button after failure");
+  d.getElementById("upd-now").click();
+  assert(!d.getElementById("upd-bg").classList.contains("open"), "ok button closes update modal");
+  // 戻るボタンで更新モーダルも閉じる
+  window.updShow("x", "y");
+  assert(window.__vitaBack() === true && !d.getElementById("upd-bg").classList.contains("open"), "__vitaBack closes update modal");
+  window.fetch = realFetch;
 
   console.log(fail === 0 ? "AUDIT_ALL_PASS" : "AUDIT_FAILURES=" + fail);
   process.exit(fail === 0 ? 0 : 1);
