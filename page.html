@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vita Gallery</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--text:#1c1e21;--muted:#5f6368;--line:#d8dce1;--accent:#0b57d0;--danger:#b3261e;--accent-soft:#e8f0fe}
+@media (prefers-color-scheme:dark){:root{--bg:#17181a;--card:#232527;--text:#e8eaed;--muted:#9aa0a6;--line:#3c4043;--accent:#8ab4f8;--danger:#f28b82;--accent-soft:#303a4d}}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","Yu Gothic UI","Meiryo UI",sans-serif;background:var(--bg);color:var(--text)}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header .build{color:var(--muted);font-size:12px}
+header .sp{flex:1}
+button{font:inherit;padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer}
+button:hover{background:var(--accent-soft)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{color:var(--danger);border-color:var(--danger)}
+button:disabled{opacity:.5;cursor:default}
+main{max-width:1080px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 8px;font-size:16px}
+.muted{color:var(--muted);font-size:13px}
+ol.steps{margin:8px 0;padding-left:22px;font-size:14px;line-height:1.7}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=text],input[type=number],select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}
+#ip{width:180px}#port{width:90px}
+.status{margin-top:10px;font-size:14px;min-height:20px}
+.status.err{color:var(--danger)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.item{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.item .thumb{width:100%;height:130px;object-fit:cover;display:block;background:#0002;cursor:pointer}
+.item .meta{padding:8px}
+.item .name{font-size:12px;word-break:break-all;line-height:1.4;min-height:34px}
+.item .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.item .ops{display:flex;gap:6px;margin-top:8px;align-items:center}
+.item .ops button{padding:4px 10px;font-size:12px}
+.item input[type=checkbox]{width:18px;height:18px}
+.folder-title{font-size:15px;margin:18px 0 10px;display:flex;gap:10px;align-items:center}
+.folder-title .cnt{color:var(--muted);font-size:12px;font-weight:normal}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);color:var(--text);border-radius:12px;max-width:92vw;max-height:92vh;overflow:auto;padding:16px;text-align:center}
+.modal img.view{max-width:86vw;max-height:70vh;display:block;margin:0 auto}
+.modal .ops{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.modal .info{font-size:13px;color:var(--muted);margin-top:8px;word-break:break-all}
+.modal p.msg{font-size:14px;line-height:1.6;white-space:pre-wrap;text-align:left;max-width:520px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Vita Gallery</h1>
+  <span class="build">build __BUILD__</span>
+  <span class="sp"></span>
+  <select id="lang-sel" aria-label="Language">
+    <option value="ja">日本語</option>
+    <option value="en">English</option>
+    <option value="fr">Français</option>
+    <option value="de">Deutsch</option>
+    <option value="it">Italiano</option>
+    <option value="es">Español</option>
+    <option value="ru">Русский</option>
+    <option value="pt">Português</option>
+    <option value="pl">Polski</option>
+    <option value="ko">한국어</option>
+    <option value="zh-Hans">简体中文</option>
+    <option value="zh-Hant">繁體中文</option>
+  </select>
+  <button id="btn-home" class="hidden" data-i18n="home">ホーム</button>
+  <button id="btn-quit" data-i18n="quit">終了</button>
+</header>
+<main>
+  <section id="page-home">
+    <div class="card">
+      <h2 data-i18n="title">VitaShell の FTP でスクリーンショットを見る</h2>
+      <p class="muted" data-i18n="intro">PS Vita の ux0:picture/SCREENSHOT の中にある写真 (jpg / bmp) を、フォルダ別に表示します。表示した写真はダウンロードと削除ができます。</p>
+      <ol class="steps">
+        <li data-i18n="step1">PS Vita で VitaShell を開きます</li>
+        <li data-i18n="step2">SELECT ボタンを押して FTP を開始します (画面に IP アドレスが表示されます)</li>
+        <li data-i18n="step3">表示された IP アドレスを下に入れて「読み込む」を押します</li>
+      </ol>
+      <div class="row">
+        <label><span data-i18n="ip">IP</span> <input type="text" id="ip" placeholder="192.168.1.10" inputmode="decimal"></label>
+        <label><span data-i18n="port">ポート</span> <input type="number" id="port" value="1337" min="1" max="65535"></label>
+        <button class="primary" id="btn-load" data-i18n="load">読み込む</button>
+      </div>
+      <div class="status" id="home-status"></div>
+      <p class="muted" data-i18n="note">PC と PS Vita が同じ Wi-Fi (同じネットワーク) につながっている必要があります。VitaShell の FTP を止めると接続できなくなります。</p>
+    </div>
+  </section>
+
+  <section id="page-gallery" class="hidden">
+    <div class="card">
+      <h2><span data-i18n="gallery">ギャラリー</span> <span class="muted" id="gal-summary"></span></h2>
+      <div class="toolbar">
+        <button id="btn-back" data-i18n="back">戻る</button>
+        <button id="btn-refresh" data-i18n="refresh">更新</button>
+        <label><span data-i18n="folder">フォルダ</span> <select id="folder-filter"></select></label>
+        <span class="muted" id="sel-count"></span>
+        <button id="btn-zip" disabled data-i18n="zip">選択をダウンロード (ZIP)</button>
+        <button id="btn-del-sel" class="danger" disabled data-i18n="delSel">選択を削除</button>
+        <button id="btn-clear-sel" disabled data-i18n="clearSel">選択を解除</button>
+      </div>
+      <div class="status" id="gal-status"></div>
+      <div id="groups"></div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-bg" id="viewer-bg">
+  <div class="modal">
+    <img class="view" id="viewer-img" alt="">
+    <div class="info" id="viewer-info"></div>
+    <div class="ops">
+      <button id="btn-prev" data-i18n="prev">前へ</button>
+      <button id="btn-next" data-i18n="next">次へ</button>
+      <button id="btn-view-dl" data-i18n="download">ダウンロード</button>
+      <button id="btn-view-del" class="danger" data-i18n="del">削除</button>
+      <button id="btn-view-close" data-i18n="close">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="dlg-bg">
+  <div class="modal">
+    <p class="msg" id="dlg-msg"></p>
+    <div class="ops">
+      <button id="dlg-cancel" data-i18n="cancel">キャンセル</button>
+      <button id="dlg-ok" class="primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="dl-bg">
+  <div class="modal">
+    <p class="msg" id="dl-msg"></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+var I18N = {
+"ja":{home:"ホーム",quit:"終了",title:"VitaShell の FTP でスクリーンショットを見る",intro:"PS Vita の ux0:picture/SCREENSHOT の中にある写真 (jpg / bmp) を、フォルダ別に表示します。表示した写真はダウンロードと削除ができます。",step1:"PS Vita で VitaShell を開きます",step2:"SELECT ボタンを押して FTP を開始します (画面に IP アドレスが表示されます)",step3:"表示された IP アドレスを下に入れて「読み込む」を押します",ip:"IP",port:"ポート",load:"読み込む",note:"PC と PS Vita が同じ Wi-Fi (同じネットワーク) につながっている必要があります。VitaShell の FTP を止めると接続できなくなります。",gallery:"ギャラリー",summary:"全 {n} 枚・{m} フォルダ",back:"戻る",refresh:"更新",folder:"フォルダ",all:"すべて",rootFolder:"SCREENSHOT 直下",selCount:"選択 {n} 件",zip:"選択をダウンロード (ZIP)",delSel:"選択を削除",clearSel:"選択を解除",empty:"写真がありません (jpg / bmp のみ表示します)",folderCount:"{n} 枚",selFolderAll:"このフォルダを全て選択",download:"ダウンロード",del:"削除",prev:"前へ",next:"次へ",close:"閉じる",cancel:"キャンセル",ok:"OK",delConfirm:"次の {n} 件を PS Vita から削除します。元に戻せません。",delDo:"削除する",deleted:"{n} 件を削除しました",delFailed:"削除できませんでした ({n} 件)",loading:"読み込み中…",deleting:"削除中…",loadFail:"読み込めませんでした",delFail:"削除に失敗しました",ipRequired:"IP アドレスを入れてください",errConnect:"接続できませんでした。VitaShell で FTP が開始されているか、IP とポートを確認してください",errNoFolder:"ux0:picture/SCREENSHOT フォルダが見つかりませんでした",errBadIp:"IP アドレスが正しくありません",errList:"一覧の取得に失敗しました",errBadFile:"ファイルが正しくありません",errNoSel:"ファイルが選ばれていません",dlMsg:"{name} をダウンロードしています…",dlDone:"ダウンロードしました",dlFail:"ダウンロードできませんでした",quitMsg:"終了しました。この画面は閉じてください。",andMore:"… ほか {n} 件"},
+"en":{home:"Home",quit:"Quit",title:"View screenshots over VitaShell FTP",intro:"Shows photos (jpg / bmp) stored in ux0:picture/SCREENSHOT on your PS Vita, grouped by folder. You can download and delete the photos shown.",step1:"Open VitaShell on your PS Vita",step2:"Press SELECT to start FTP (the IP address appears on screen)",step3:"Enter the IP address shown below and press “Load”",ip:"IP",port:"Port",load:"Load",note:"Your PC/phone and PS Vita must be on the same Wi-Fi (same network). Stopping FTP in VitaShell disconnects this app.",gallery:"Gallery",summary:"{n} photos · {m} folders",back:"Back",refresh:"Refresh",folder:"Folder",all:"All",rootFolder:"SCREENSHOT (root)",selCount:"{n} selected",zip:"Download selected (ZIP)",delSel:"Delete selected",clearSel:"Clear selection",empty:"No photos (only jpg / bmp are shown)",folderCount:"{n} photos",selFolderAll:"Select all in this folder",download:"Download",del:"Delete",prev:"Prev",next:"Next",close:"Close",cancel:"Cancel",ok:"OK",delConfirm:"Delete the following {n} item(s) from the PS Vita? This cannot be undone.",delDo:"Delete",deleted:"Deleted {n} item(s)",delFailed:"Could not delete ({n} item(s))",loading:"Loading…",deleting:"Deleting…",loadFail:"Could not load",delFail:"Delete failed",ipRequired:"Enter the IP address",errConnect:"Could not connect. Check that FTP is started in VitaShell and that the IP and port are right",errNoFolder:"The ux0:picture/SCREENSHOT folder was not found",errBadIp:"The IP address is not valid",errList:"Could not get the list",errBadFile:"The file is not valid",errNoSel:"No file is selected",dlMsg:"Downloading {name}…",dlDone:"Downloaded",dlFail:"Could not download",quitMsg:"Finished. You can close this screen.",andMore:"… and {n} more"},
+"fr":{home:"Accueil",quit:"Quitter",title:"Voir les captures via le FTP de VitaShell",intro:"Affiche les photos (jpg / bmp) de ux0:picture/SCREENSHOT sur votre PS Vita, classées par dossier. Vous pouvez télécharger et supprimer les photos affichées.",step1:"Ouvrez VitaShell sur votre PS Vita",step2:"Appuyez sur SELECT pour démarrer le FTP (l'adresse IP s'affiche à l'écran)",step3:"Saisissez l'adresse IP affichée ci-dessous et appuyez sur « Charger »",ip:"IP",port:"Port",load:"Charger",note:"Votre PC/téléphone et votre PS Vita doivent être sur le même Wi-Fi (même réseau). Arrêter le FTP dans VitaShell déconnecte l'application.",gallery:"Galerie",summary:"{n} photos · {m} dossiers",back:"Retour",refresh:"Actualiser",folder:"Dossier",all:"Tous",rootFolder:"SCREENSHOT (racine)",selCount:"{n} sélectionné(s)",zip:"Télécharger la sélection (ZIP)",delSel:"Supprimer la sélection",clearSel:"Effacer la sélection",empty:"Aucune photo (seuls jpg / bmp sont affichés)",folderCount:"{n} photos",selFolderAll:"Tout sélectionner dans ce dossier",download:"Télécharger",del:"Supprimer",prev:"Préc.",next:"Suiv.",close:"Fermer",cancel:"Annuler",ok:"OK",delConfirm:"Supprimer les {n} élément(s) suivants de la PS Vita ? Cette action est irréversible.",delDo:"Supprimer",deleted:"{n} élément(s) supprimé(s)",delFailed:"Suppression impossible ({n} élément(s))",loading:"Chargement…",deleting:"Suppression…",loadFail:"Chargement impossible",delFail:"Échec de la suppression",ipRequired:"Saisissez l'adresse IP",errConnect:"Connexion impossible. Vérifiez que le FTP est démarré dans VitaShell et que l'IP et le port sont corrects",errNoFolder:"Le dossier ux0:picture/SCREENSHOT est introuvable",errBadIp:"L'adresse IP n'est pas valide",errList:"Impossible d'obtenir la liste",errBadFile:"Le fichier n'est pas valide",errNoSel:"Aucun fichier sélectionné",dlMsg:"Téléchargement de {name}…",dlDone:"Téléchargé",dlFail:"Téléchargement impossible",quitMsg:"Terminé. Vous pouvez fermer cet écran.",andMore:"… et {n} de plus"},
+"de":{home:"Start",quit:"Beenden",title:"Screenshots über VitaShell-FTP ansehen",intro:"Zeigt Fotos (jpg / bmp) aus ux0:picture/SCREENSHOT auf Ihrer PS Vita, nach Ordnern gruppiert. Angezeigte Fotos können heruntergeladen und gelöscht werden.",step1:"Öffnen Sie VitaShell auf Ihrer PS Vita",step2:"Drücken Sie SELECT, um FTP zu starten (die IP-Adresse erscheint auf dem Bildschirm)",step3:"Geben Sie die angezeigte IP-Adresse unten ein und drücken Sie „Laden“",ip:"IP",port:"Port",load:"Laden",note:"PC/Handy und PS Vita müssen im selben WLAN (selben Netzwerk) sein. Wenn FTP in VitaShell gestoppt wird, wird die Verbindung getrennt.",gallery:"Galerie",summary:"{n} Fotos · {m} Ordner",back:"Zurück",refresh:"Aktualisieren",folder:"Ordner",all:"Alle",rootFolder:"SCREENSHOT (Stamm)",selCount:"{n} ausgewählt",zip:"Auswahl herunterladen (ZIP)",delSel:"Auswahl löschen",clearSel:"Auswahl aufheben",empty:"Keine Fotos (nur jpg / bmp werden angezeigt)",folderCount:"{n} Fotos",selFolderAll:"Alle in diesem Ordner auswählen",download:"Herunterladen",del:"Löschen",prev:"Zurück",next:"Weiter",close:"Schließen",cancel:"Abbrechen",ok:"OK",delConfirm:"Die folgenden {n} Element(e) von der PS Vita löschen? Das kann nicht rückgängig gemacht werden.",delDo:"Löschen",deleted:"{n} Element(e) gelöscht",delFailed:"Löschen nicht möglich ({n} Element(e))",loading:"Wird geladen…",deleting:"Wird gelöscht…",loadFail:"Laden nicht möglich",delFail:"Löschen fehlgeschlagen",ipRequired:"Geben Sie die IP-Adresse ein",errConnect:"Keine Verbindung. Prüfen Sie, ob FTP in VitaShell gestartet ist und IP und Port stimmen",errNoFolder:"Der Ordner ux0:picture/SCREENSHOT wurde nicht gefunden",errBadIp:"Die IP-Adresse ist ungültig",errList:"Die Liste konnte nicht abgerufen werden",errBadFile:"Die Datei ist ungültig",errNoSel:"Keine Datei ausgewählt",dlMsg:"{name} wird heruntergeladen…",dlDone:"Heruntergeladen",dlFail:"Herunterladen nicht möglich",quitMsg:"Beendet. Sie können diese Anzeige schließen.",andMore:"… und {n} weitere"},
+"it":{home:"Home",quit:"Esci",title:"Vedi gli screenshot tramite FTP di VitaShell",intro:"Mostra le foto (jpg / bmp) in ux0:picture/SCREENSHOT sulla PS Vita, raggruppate per cartella. Puoi scaricare ed eliminare le foto mostrate.",step1:"Apri VitaShell sulla PS Vita",step2:"Premi SELECT per avviare l'FTP (l'indirizzo IP appare sullo schermo)",step3:"Inserisci l'indirizzo IP mostrato qui sotto e premi «Carica»",ip:"IP",port:"Porta",load:"Carica",note:"Il PC/telefono e la PS Vita devono essere sulla stessa rete Wi-Fi. Se fermi l'FTP in VitaShell, l'app si disconnette.",gallery:"Galleria",summary:"{n} foto · {m} cartelle",back:"Indietro",refresh:"Aggiorna",folder:"Cartella",all:"Tutte",rootFolder:"SCREENSHOT (radice)",selCount:"{n} selezionati",zip:"Scarica selezionati (ZIP)",delSel:"Elimina selezionati",clearSel:"Deseleziona",empty:"Nessuna foto (vengono mostrati solo jpg / bmp)",folderCount:"{n} foto",selFolderAll:"Seleziona tutto in questa cartella",download:"Scarica",del:"Elimina",prev:"Prec.",next:"Succ.",close:"Chiudi",cancel:"Annulla",ok:"OK",delConfirm:"Eliminare i seguenti {n} elementi dalla PS Vita? L'operazione non può essere annullata.",delDo:"Elimina",deleted:"{n} elementi eliminati",delFailed:"Impossibile eliminare ({n} elementi)",loading:"Caricamento…",deleting:"Eliminazione…",loadFail:"Caricamento non riuscito",delFail:"Eliminazione non riuscita",ipRequired:"Inserisci l'indirizzo IP",errConnect:"Connessione non riuscita. Controlla che l'FTP sia avviato in VitaShell e che IP e porta siano corretti",errNoFolder:"Cartella ux0:picture/SCREENSHOT non trovata",errBadIp:"Indirizzo IP non valido",errList:"Impossibile ottenere l'elenco",errBadFile:"File non valido",errNoSel:"Nessun file selezionato",dlMsg:"Download di {name}…",dlDone:"Scaricato",dlFail:"Download non riuscito",quitMsg:"Fatto. Puoi chiudere questa schermata.",andMore:"… e altri {n}"},
+"es":{home:"Inicio",quit:"Salir",title:"Ver capturas mediante el FTP de VitaShell",intro:"Muestra las fotos (jpg / bmp) de ux0:picture/SCREENSHOT en tu PS Vita, agrupadas por carpeta. Puedes descargar y eliminar las fotos mostradas.",step1:"Abre VitaShell en tu PS Vita",step2:"Pulsa SELECT para iniciar el FTP (la dirección IP aparece en pantalla)",step3:"Escribe la dirección IP mostrada abajo y pulsa «Cargar»",ip:"IP",port:"Puerto",load:"Cargar",note:"El PC/teléfono y la PS Vita deben estar en la misma red Wi-Fi. Si detienes el FTP en VitaShell, la app se desconecta.",gallery:"Galería",summary:"{n} fotos · {m} carpetas",back:"Atrás",refresh:"Actualizar",folder:"Carpeta",all:"Todas",rootFolder:"SCREENSHOT (raíz)",selCount:"{n} seleccionados",zip:"Descargar seleccionados (ZIP)",delSel:"Eliminar seleccionados",clearSel:"Borrar selección",empty:"No hay fotos (solo se muestran jpg / bmp)",folderCount:"{n} fotos",selFolderAll:"Seleccionar todo en esta carpeta",download:"Descargar",del:"Eliminar",prev:"Ant.",next:"Sig.",close:"Cerrar",cancel:"Cancelar",ok:"OK",delConfirm:"¿Eliminar los siguientes {n} elemento(s) de la PS Vita? No se puede deshacer.",delDo:"Eliminar",deleted:"{n} elemento(s) eliminados",delFailed:"No se pudo eliminar ({n} elemento(s))",loading:"Cargando…",deleting:"Eliminando…",loadFail:"No se pudo cargar",delFail:"Error al eliminar",ipRequired:"Escribe la dirección IP",errConnect:"No se pudo conectar. Comprueba que el FTP esté iniciado en VitaShell y que la IP y el puerto sean correctos",errNoFolder:"No se encontró la carpeta ux0:picture/SCREENSHOT",errBadIp:"La dirección IP no es válida",errList:"No se pudo obtener la lista",errBadFile:"El archivo no es válido",errNoSel:"No hay ningún archivo seleccionado",dlMsg:"Descargando {name}…",dlDone:"Descargado",dlFail:"No se pudo descargar",quitMsg:"Terminado. Puedes cerrar esta pantalla.",andMore:"… y {n} más"},
+"ru":{home:"Главная",quit:"Выход",title:"Просмотр скриншотов через FTP VitaShell",intro:"Показывает фото (jpg / bmp) из ux0:picture/SCREENSHOT на PS Vita, сгруппированные по папкам. Показанные фото можно скачать и удалить.",step1:"Откройте VitaShell на PS Vita",step2:"Нажмите SELECT, чтобы запустить FTP (IP-адрес появится на экране)",step3:"Введите показанный IP-адрес ниже и нажмите «Загрузить»",ip:"IP",port:"Порт",load:"Загрузить",note:"Компьютер/телефон и PS Vita должны быть в одной сети Wi-Fi. Если остановить FTP в VitaShell, приложение отключится.",gallery:"Галерея",summary:"Фото: {n} · Папок: {m}",back:"Назад",refresh:"Обновить",folder:"Папка",all:"Все",rootFolder:"SCREENSHOT (корень)",selCount:"Выбрано: {n}",zip:"Скачать выбранное (ZIP)",delSel:"Удалить выбранное",clearSel:"Сбросить выбор",empty:"Нет фото (показываются только jpg / bmp)",folderCount:"{n} фото",selFolderAll:"Выбрать все в этой папке",download:"Скачать",del:"Удалить",prev:"Назад",next:"Вперёд",close:"Закрыть",cancel:"Отмена",ok:"OK",delConfirm:"Удалить следующие элементы ({n}) с PS Vita? Это действие нельзя отменить.",delDo:"Удалить",deleted:"Удалено элементов: {n}",delFailed:"Не удалось удалить (элементов: {n})",loading:"Загрузка…",deleting:"Удаление…",loadFail:"Не удалось загрузить",delFail:"Не удалось удалить",ipRequired:"Введите IP-адрес",errConnect:"Не удалось подключиться. Проверьте, что FTP запущен в VitaShell, а IP и порт указаны верно",errNoFolder:"Папка ux0:picture/SCREENSHOT не найдена",errBadIp:"Недопустимый IP-адрес",errList:"Не удалось получить список",errBadFile:"Недопустимый файл",errNoSel:"Файл не выбран",dlMsg:"Скачивание {name}…",dlDone:"Скачано",dlFail:"Не удалось скачать",quitMsg:"Готово. Этот экран можно закрыть.",andMore:"… и ещё {n}"},
+"pt":{home:"Início",quit:"Sair",title:"Ver capturas de tela pelo FTP do VitaShell",intro:"Mostra as fotos (jpg / bmp) em ux0:picture/SCREENSHOT no seu PS Vita, agrupadas por pasta. Você pode baixar e excluir as fotos mostradas.",step1:"Abra o VitaShell no seu PS Vita",step2:"Pressione SELECT para iniciar o FTP (o endereço IP aparece na tela)",step3:"Digite o endereço IP mostrado abaixo e pressione “Carregar”",ip:"IP",port:"Porta",load:"Carregar",note:"O PC/telefone e o PS Vita precisam estar na mesma rede Wi-Fi. Parar o FTP no VitaShell desconecta o app.",gallery:"Galeria",summary:"{n} fotos · {m} pastas",back:"Voltar",refresh:"Atualizar",folder:"Pasta",all:"Todas",rootFolder:"SCREENSHOT (raiz)",selCount:"{n} selecionados",zip:"Baixar selecionados (ZIP)",delSel:"Excluir selecionados",clearSel:"Limpar seleção",empty:"Nenhuma foto (apenas jpg / bmp são mostrados)",folderCount:"{n} fotos",selFolderAll:"Selecionar tudo nesta pasta",download:"Baixar",del:"Excluir",prev:"Ant.",next:"Próx.",close:"Fechar",cancel:"Cancelar",ok:"OK",delConfirm:"Excluir os {n} item(ns) a seguir do PS Vita? Não é possível desfazer.",delDo:"Excluir",deleted:"{n} item(ns) excluídos",delFailed:"Não foi possível excluir ({n} item(ns))",loading:"Carregando…",deleting:"Excluindo…",loadFail:"Não foi possível carregar",delFail:"Falha ao excluir",ipRequired:"Digite o endereço IP",errConnect:"Não foi possível conectar. Verifique se o FTP está iniciado no VitaShell e se o IP e a porta estão corretos",errNoFolder:"A pasta ux0:picture/SCREENSHOT não foi encontrada",errBadIp:"O endereço IP não é válido",errList:"Não foi possível obter a lista",errBadFile:"O arquivo não é válido",errNoSel:"Nenhum arquivo selecionado",dlMsg:"Baixando {name}…",dlDone:"Baixado",dlFail:"Não foi possível baixar",quitMsg:"Concluído. Você pode fechar esta tela.",andMore:"… e mais {n}"},
+"pl":{home:"Start",quit:"Zamknij",title:"Przeglądaj zrzuty ekranu przez FTP VitaShell",intro:"Pokazuje zdjęcia (jpg / bmp) z ux0:picture/SCREENSHOT na PS Vita, pogrupowane według folderów. Wyświetlone zdjęcia można pobierać i usuwać.",step1:"Otwórz VitaShell na PS Vita",step2:"Naciśnij SELECT, aby uruchomić FTP (adres IP pojawi się na ekranie)",step3:"Wpisz pokazany adres IP poniżej i naciśnij „Wczytaj”",ip:"IP",port:"Port",load:"Wczytaj",note:"Komputer/telefon i PS Vita muszą być w tej samej sieci Wi-Fi. Zatrzymanie FTP w VitaShell rozłączy aplikację.",gallery:"Galeria",summary:"Zdjęć: {n} · Folderów: {m}",back:"Wstecz",refresh:"Odśwież",folder:"Folder",all:"Wszystkie",rootFolder:"SCREENSHOT (główny)",selCount:"Wybrano: {n}",zip:"Pobierz wybrane (ZIP)",delSel:"Usuń wybrane",clearSel:"Wyczyść wybór",empty:"Brak zdjęć (wyświetlane są tylko jpg / bmp)",folderCount:"{n} zdjęć",selFolderAll:"Zaznacz wszystko w tym folderze",download:"Pobierz",del:"Usuń",prev:"Poprz.",next:"Nast.",close:"Zamknij",cancel:"Anuluj",ok:"OK",delConfirm:"Usunąć następujące elementy ({n}) z PS Vita? Nie można tego cofnąć.",delDo:"Usuń",deleted:"Usunięto elementów: {n}",delFailed:"Nie udało się usunąć (elementów: {n})",loading:"Wczytywanie…",deleting:"Usuwanie…",loadFail:"Nie udało się wczytać",delFail:"Usuwanie nie powiodło się",ipRequired:"Wpisz adres IP",errConnect:"Nie udało się połączyć. Sprawdź, czy FTP jest uruchomiony w VitaShell oraz czy IP i port są poprawne",errNoFolder:"Nie znaleziono folderu ux0:picture/SCREENSHOT",errBadIp:"Adres IP jest nieprawidłowy",errList:"Nie udało się pobrać listy",errBadFile:"Plik jest nieprawidłowy",errNoSel:"Nie wybrano pliku",dlMsg:"Pobieranie {name}…",dlDone:"Pobrano",dlFail:"Nie udało się pobrać",quitMsg:"Zakończono. Możesz zamknąć ten ekran.",andMore:"… i jeszcze {n}"},
+"ko":{home:"홈",quit:"종료",title:"VitaShell FTP로 스크린샷 보기",intro:"PS Vita의 ux0:picture/SCREENSHOT 안에 있는 사진(jpg / bmp)을 폴더별로 표시합니다. 표시된 사진은 다운로드와 삭제가 가능합니다.",step1:"PS Vita에서 VitaShell을 엽니다",step2:"SELECT 버튼을 눌러 FTP를 시작합니다 (화면에 IP 주소가 표시됩니다)",step3:"표시된 IP 주소를 아래에 입력하고 “불러오기”를 누릅니다",ip:"IP",port:"포트",load:"불러오기",note:"PC/휴대폰과 PS Vita가 같은 Wi-Fi(같은 네트워크)에 연결되어 있어야 합니다. VitaShell의 FTP를 중지하면 연결이 끊깁니다.",gallery:"갤러리",summary:"전체 {n}장 · {m}개 폴더",back:"뒤로",refresh:"새로고침",folder:"폴더",all:"전체",rootFolder:"SCREENSHOT 바로 아래",selCount:"{n}개 선택됨",zip:"선택 항목 다운로드 (ZIP)",delSel:"선택 항목 삭제",clearSel:"선택 해제",empty:"사진이 없습니다 (jpg / bmp만 표시됩니다)",folderCount:"{n}장",selFolderAll:"이 폴더 전체 선택",download:"다운로드",del:"삭제",prev:"이전",next:"다음",close:"닫기",cancel:"취소",ok:"확인",delConfirm:"다음 {n}개를 PS Vita에서 삭제합니다. 되돌릴 수 없습니다.",delDo:"삭제",deleted:"{n}개를 삭제했습니다",delFailed:"삭제할 수 없었습니다 ({n}개)",loading:"불러오는 중…",deleting:"삭제 중…",loadFail:"불러올 수 없었습니다",delFail:"삭제에 실패했습니다",ipRequired:"IP 주소를 입력하세요",errConnect:"연결할 수 없었습니다. VitaShell에서 FTP가 시작되었는지, IP와 포트를 확인하세요",errNoFolder:"ux0:picture/SCREENSHOT 폴더를 찾을 수 없습니다",errBadIp:"IP 주소가 올바르지 않습니다",errList:"목록을 가져올 수 없었습니다",errBadFile:"파일이 올바르지 않습니다",errNoSel:"선택된 파일이 없습니다",dlMsg:"{name} 다운로드 중…",dlDone:"다운로드했습니다",dlFail:"다운로드할 수 없었습니다",quitMsg:"종료했습니다. 이 화면을 닫아도 됩니다.",andMore:"… 외 {n}개"},
+"zh-Hans":{home:"主页",quit:"退出",title:"通过 VitaShell FTP 查看截图",intro:"按文件夹显示 PS Vita 上 ux0:picture/SCREENSHOT 中的照片（jpg / bmp）。显示的照片可以下载和删除。",step1:"在 PS Vita 上打开 VitaShell",step2:"按 SELECT 启动 FTP（屏幕上会显示 IP 地址）",step3:"在下方输入显示的 IP 地址，然后点“加载”",ip:"IP",port:"端口",load:"加载",note:"电脑/手机与 PS Vita 必须连接到同一个 Wi-Fi（同一网络）。在 VitaShell 中停止 FTP 后，本应用会断开连接。",gallery:"图库",summary:"共 {n} 张 · {m} 个文件夹",back:"返回",refresh:"刷新",folder:"文件夹",all:"全部",rootFolder:"SCREENSHOT 根目录",selCount:"已选 {n} 项",zip:"下载所选 (ZIP)",delSel:"删除所选",clearSel:"取消选择",empty:"没有照片（仅显示 jpg / bmp）",folderCount:"{n} 张",selFolderAll:"全选此文件夹",download:"下载",del:"删除",prev:"上一张",next:"下一张",close:"关闭",cancel:"取消",ok:"确定",delConfirm:"要从 PS Vita 删除以下 {n} 项吗？此操作无法撤销。",delDo:"删除",deleted:"已删除 {n} 项",delFailed:"无法删除（{n} 项）",loading:"加载中…",deleting:"删除中…",loadFail:"无法加载",delFail:"删除失败",ipRequired:"请输入 IP 地址",errConnect:"无法连接。请确认 VitaShell 中已启动 FTP，且 IP 和端口正确",errNoFolder:"找不到 ux0:picture/SCREENSHOT 文件夹",errBadIp:"IP 地址无效",errList:"无法获取列表",errBadFile:"文件无效",errNoSel:"未选择文件",dlMsg:"正在下载 {name}…",dlDone:"已下载",dlFail:"无法下载",quitMsg:"已退出。可以关闭此页面。",andMore:"… 还有 {n} 项"},
+"zh-Hant":{home:"主頁",quit:"結束",title:"透過 VitaShell FTP 查看截圖",intro:"依資料夾顯示 PS Vita 上 ux0:picture/SCREENSHOT 中的相片（jpg / bmp）。顯示的相片可以下載和刪除。",step1:"在 PS Vita 上開啟 VitaShell",step2:"按 SELECT 啟動 FTP（畫面上會顯示 IP 位址）",step3:"在下方輸入顯示的 IP 位址，然後點「載入」",ip:"IP",port:"連接埠",load:"載入",note:"電腦/手機與 PS Vita 必須連接到同一個 Wi-Fi（同一個網路）。在 VitaShell 中停止 FTP 後，本應用程式會中斷連線。",gallery:"圖庫",summary:"共 {n} 張 · {m} 個資料夾",back:"返回",refresh:"重新整理",folder:"資料夾",all:"全部",rootFolder:"SCREENSHOT 根目錄",selCount:"已選 {n} 項",zip:"下載所選 (ZIP)",delSel:"刪除所選",clearSel:"取消選取",empty:"沒有相片（僅顯示 jpg / bmp）",folderCount:"{n} 張",selFolderAll:"全選此資料夾",download:"下載",del:"刪除",prev:"上一張",next:"下一張",close:"關閉",cancel:"取消",ok:"確定",delConfirm:"要從 PS Vita 刪除以下 {n} 項嗎？此操作無法復原。",delDo:"刪除",deleted:"已刪除 {n} 項",delFailed:"無法刪除（{n} 項）",loading:"載入中…",deleting:"刪除中…",loadFail:"無法載入",delFail:"刪除失敗",ipRequired:"請輸入 IP 位址",errConnect:"無法連線。請確認 VitaShell 中已啟動 FTP，且 IP 和連接埠正確",errNoFolder:"找不到 ux0:picture/SCREENSHOT 資料夾",errBadIp:"IP 位址無效",errList:"無法取得清單",errBadFile:"檔案無效",errNoSel:"未選取檔案",dlMsg:"正在下載 {name}…",dlDone:"已下載",dlFail:"無法下載",quitMsg:"已結束。可以關閉此畫面。",andMore:"… 還有 {n} 項"}
+};
+var LANGS = ["ja","en","fr","de","it","es","ru","pt","pl","ko","zh-Hans","zh-Hant"];
+function sysLang(){
+  var nav = (navigator.language || "en").toLowerCase();
+  if (nav.indexOf("zh") === 0) {
+    return (nav.indexOf("tw") >= 0 || nav.indexOf("hk") >= 0 || nav.indexOf("hant") >= 0) ? "zh-Hant" : "zh-Hans";
+  }
+  var base = nav.split("-")[0];
+  for (var i = 0; i < LANGS.length; i++) { if (LANGS[i] === base) return base; }
+  return "en";
+}
+var LANG = "ja";
+try {
+  var savedLang = localStorage.getItem("vita_gal_lang");
+  LANG = (savedLang && I18N[savedLang]) ? savedLang : sysLang();
+} catch (e) { LANG = sysLang(); }
+function t(key){ var d = I18N[LANG] || I18N.en; var s = d[key]; if (s == null) s = I18N.en[key]; return s == null ? key : s; }
+function tf(key, vals){ var s = t(key); for (var k in vals) s = s.split("{" + k + "}").join(String(vals[k])); return s; }
+function errText(code){
+  var map = {connect:"errConnect", nofolder:"errNoFolder", badip:"errBadIp", list:"errList", badfile:"errBadFile", nosel:"errNoSel"};
+  return t(map[code] || "errConnect");
+}
+function applyLang(){
+  document.documentElement.lang = LANG;
+  var els = document.querySelectorAll("[data-i18n]");
+  for (var i = 0; i < els.length; i++) els[i].textContent = t(els[i].getAttribute("data-i18n"));
+  $("dlg-ok").textContent = t("ok");
+  $("lang-sel").value = LANG;
+  if (typeof items !== "undefined" && items.length) { buildFilter(); renderGallery(); }
+  else { buildFilter(); }
+}
+
+var items = [];
+var selected = {};
+var viewList = [];
+var viewIdx = 0;
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function ip(){ return $("ip").value.trim(); }
+function port(){ return $("port").value.trim() || "1337"; }
+function qs(){ return "ip=" + encodeURIComponent(ip()) + "&port=" + encodeURIComponent(port()) + "&lang=" + encodeURIComponent(LANG); }
+function fmtSize(n){ if(!n) return "-"; if(n<1024) return n+" B"; if(n<1048576) return (n/1024).toFixed(1)+" KB"; return (n/1048576).toFixed(1)+" MB"; }
+function folderLabel(f){ return f === "" ? t("rootFolder") : f; }
+
+function saveConn(){ try{ localStorage.setItem("vita_gal_ip", ip()); localStorage.setItem("vita_gal_port", port()); }catch(e){} }
+function loadConn(){ try{ var a=localStorage.getItem("vita_gal_ip"); if(a) $("ip").value=a; var p=localStorage.getItem("vita_gal_port"); if(p) $("port").value=p; }catch(e){} }
+
+function showPage(name){
+  $("page-home").classList.toggle("hidden", name !== "home");
+  $("page-gallery").classList.toggle("hidden", name !== "gallery");
+  $("btn-home").classList.toggle("hidden", name === "home");
+  window.scrollTo(0,0);
+}
+
+var dlgCb = null;
+function showDlg(msg, okLabel, cb, danger){
+  $("dlg-msg").textContent = msg;
+  $("dlg-ok").textContent = okLabel || t("ok");
+  $("dlg-ok").className = danger ? "danger" : "primary";
+  $("dlg-cancel").style.display = cb ? "" : "none";
+  dlgCb = cb || null;
+  $("dlg-bg").classList.add("open");
+}
+function closeDlg(){ $("dlg-bg").classList.remove("open"); dlgCb = null; }
+$("dlg-cancel").addEventListener("click", closeDlg);
+$("dlg-ok").addEventListener("click", function(){ var cb = dlgCb; closeDlg(); if(cb) cb(); });
+
+function setStatus(id, msg, isErr){
+  var el = $(id); el.textContent = msg || ""; el.className = "status" + (isErr ? " err" : "");
+}
+
+function loadGallery(){
+  if(!ip()){ setStatus("home-status", t("ipRequired"), true); return; }
+  saveConn();
+  setStatus("home-status", t("loading"));
+  $("btn-load").disabled = true;
+  fetch("/api/list?" + qs()).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+  .then(function(res){
+    $("btn-load").disabled = false;
+    if(!res.ok){ setStatus("home-status", errText(res.j.error), true); return; }
+    items = res.j.items || [];
+    selected = {};
+    buildFilter();
+    renderGallery();
+    showPage("gallery");
+    setStatus("home-status", "");
+  }).catch(function(){
+    $("btn-load").disabled = false;
+    setStatus("home-status", t("loadFail"), true);
+  });
+}
+
+function buildFilter(){
+  var sel = $("folder-filter");
+  var cur = sel.value, hasCur = sel.selectedIndex > 0;
+  sel.innerHTML = "";
+  var o0 = document.createElement("option"); o0.value = ""; o0.textContent = t("all"); sel.appendChild(o0);
+  var seen = {};
+  items.forEach(function(it){ if(!seen[it.folder]){ seen[it.folder]=1; var o=document.createElement("option"); o.value=it.folder; o.textContent=folderLabel(it.folder); sel.appendChild(o); } });
+  if(hasCur && seen[cur]) sel.value = cur;
+  $("gal-summary").textContent = items.length ? "(" + tf("summary", {n: items.length, m: Object.keys(seen).length}) + " · ux0:picture/SCREENSHOT)" : "";
+}
+
+function visibleItems(){
+  var sel = $("folder-filter");
+  if(sel.selectedIndex <= 0) return items;
+  var f = sel.value;
+  return items.filter(function(it){ return it.folder === f; });
+}
+
+function renderGallery(){
+  var vis = visibleItems();
+  viewList = vis;
+  var groups = $("groups");
+  groups.innerHTML = "";
+  if(vis.length === 0){
+    var p = document.createElement("p"); p.className = "muted"; p.textContent = t("empty"); groups.appendChild(p);
+  }
+  var curFolder = null, grid = null;
+  vis.forEach(function(it){
+    if(it.folder !== curFolder){
+      curFolder = it.folder;
+      var cnt = vis.filter(function(x){ return x.folder===curFolder; }).length;
+      var h = document.createElement("div");
+      h.className = "folder-title";
+      var titleSpan = document.createElement("span");
+      titleSpan.textContent = folderLabel(curFolder);
+      var cntSpan = document.createElement("span");
+      cntSpan.className = "cnt"; cntSpan.textContent = tf("folderCount", {n: cnt});
+      h.appendChild(titleSpan); h.appendChild(cntSpan);
+      var allBtn = document.createElement("button");
+      allBtn.textContent = t("selFolderAll");
+      (function(folder){
+        allBtn.addEventListener("click", function(){
+          vis.forEach(function(x){ if(x.folder===folder) selected[x.path]=true; });
+          renderGallery();
+        });
+      })(curFolder);
+      h.appendChild(allBtn);
+      groups.appendChild(h);
+      grid = document.createElement("div");
+      grid.className = "grid";
+      groups.appendChild(grid);
+    }
+    var card = document.createElement("div");
+    card.className = "item";
+    var thumbUrl = "/api/thumb?" + qs() + "&path=" + encodeURIComponent(it.path);
+    card.innerHTML =
+      '<img class="thumb" loading="lazy" src="' + thumbUrl + '" alt="">' +
+      '<div class="meta"><div class="name">' + esc(it.name) + '</div>' +
+      '<div class="sub">' + esc(it.ext.toUpperCase()) + ' · ' + fmtSize(it.size) + '</div>' +
+      '<div class="ops"><input type="checkbox" ' + (selected[it.path] ? "checked" : "") + '>' +
+      '<button data-op="dl">' + esc(t("download")) + '</button><button data-op="del" class="danger">' + esc(t("del")) + '</button></div></div>';
+    (function(item, el){
+      el.querySelector(".thumb").addEventListener("click", function(){ openViewer(item); });
+      el.querySelector("input[type=checkbox]").addEventListener("change", function(ev){
+        if(ev.target.checked) selected[item.path]=true; else delete selected[item.path];
+        updateSelBar();
+      });
+      el.querySelector('[data-op="dl"]').addEventListener("click", function(){ downloadOne(item); });
+      el.querySelector('[data-op="del"]').addEventListener("click", function(){ askDelete([item]); });
+    })(it, card);
+    grid.appendChild(card);
+  });
+  updateSelBar();
+  setStatus("gal-status", "");
+}
+
+function selPaths(){ return Object.keys(selected); }
+function updateSelBar(){
+  var n = selPaths().length;
+  $("sel-count").textContent = tf("selCount", {n: n});
+  $("btn-zip").disabled = n===0;
+  $("btn-del-sel").disabled = n===0;
+  $("btn-clear-sel").disabled = n===0;
+}
+
+// ---- ダウンロード (「ダウンロード中…」表示つき) ----
+function startDownload(url, displayName){
+  var tok = "d" + Date.now() + Math.floor(Math.random()*1e6);
+  var sep = url.indexOf("?") >= 0 ? "&" : "?";
+  var a = document.createElement("a");
+  a.href = url + sep + "tok=" + tok;
+  a.download = "";
+  document.body.appendChild(a); a.click(); a.remove();
+  $("dl-msg").textContent = tf("dlMsg", {name: displayName});
+  $("dl-bg").classList.add("open");
+  var tries = 0;
+  var timer = setInterval(function(){
+    tries++;
+    fetch("/api/dlstatus?tok=" + tok).then(function(r){ return r.json(); }).then(function(j){
+      if(j.state === "done" || j.state === "err"){
+        clearInterval(timer);
+        $("dl-bg").classList.remove("open");
+        showDlg(j.state === "done" ? t("dlDone") : t("dlFail"), t("ok"), null, false);
+      } else if(tries > 1200){
+        clearInterval(timer);
+        $("dl-bg").classList.remove("open");
+        showDlg(t("dlFail"), t("ok"), null, false);
+      }
+    }).catch(function(){});
+  }, 700);
+}
+function downloadOne(it){
+  closeViewer();
+  startDownload("/api/file?" + qs() + "&path=" + encodeURIComponent(it.path) + "&dl=1", it.name);
+}
+
+function openViewer(it){
+  viewIdx = viewList.indexOf(it);
+  if(viewIdx < 0) viewIdx = 0;
+  showViewer();
+  $("viewer-bg").classList.add("open");
+}
+function showViewer(){
+  var it = viewList[viewIdx];
+  if(!it) return;
+  $("viewer-img").src = "/api/file?" + qs() + "&path=" + encodeURIComponent(it.path);
+  $("viewer-info").textContent = folderLabel(it.folder) + " / " + it.name + " · " + it.ext.toUpperCase() + " · " + fmtSize(it.size) + " (" + (viewIdx+1) + " / " + viewList.length + ")";
+  $("btn-prev").disabled = viewIdx <= 0;
+  $("btn-next").disabled = viewIdx >= viewList.length - 1;
+}
+function closeViewer(){ $("viewer-bg").classList.remove("open"); $("viewer-img").src = ""; }
+$("btn-view-close").addEventListener("click", closeViewer);
+$("viewer-bg").addEventListener("click", function(e){ if(e.target === $("viewer-bg")) closeViewer(); });
+$("btn-prev").addEventListener("click", function(){ if(viewIdx>0){ viewIdx--; showViewer(); } });
+$("btn-next").addEventListener("click", function(){ if(viewIdx<viewList.length-1){ viewIdx++; showViewer(); } });
+$("btn-view-dl").addEventListener("click", function(){ var it=viewList[viewIdx]; if(it) downloadOne(it); });
+$("btn-view-del").addEventListener("click", function(){ var it=viewList[viewIdx]; if(it) askDelete([it]); });
+
+function askDelete(list){
+  if(!list.length) return;
+  var names = list.slice(0,10).map(function(it){ return "・" + it.path; }).join("\n");
+  if(list.length > 10) names += "\n" + tf("andMore", {n: list.length-10});
+  showDlg(tf("delConfirm", {n: list.length}) + "\n\n" + names, t("delDo"), function(){ doDelete(list); }, true);
+}
+
+function doDelete(list){
+  var paths = list.map(function(it){ return it.path; });
+  setStatus("gal-status", t("deleting"));
+  fetch("/api/delete-many", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ip: ip(), port: parseInt(port(),10)||1337, paths: paths})})
+  .then(function(r){ return r.json(); })
+  .then(function(j){
+    var gone = {};
+    paths.forEach(function(p){ gone[p]=true; });
+    if(j.failed && j.failed.length){ j.failed.forEach(function(p){ delete gone[p]; }); }
+    items = items.filter(function(it){ return !gone[it.path]; });
+    paths.forEach(function(p){ delete selected[p]; });
+    closeViewer();
+    buildFilter();
+    renderGallery();
+    if(j.failed && j.failed.length){
+      showDlg(tf("delFailed", {n: j.failed.length}) + "\n" + j.failed.join("\n"), t("ok"), null, false);
+    } else {
+      showDlg(tf("deleted", {n: j.deleted}), t("ok"), null, false);
+    }
+  }).catch(function(){ setStatus("gal-status", t("delFail"), true); });
+}
+
+$("btn-load").addEventListener("click", loadGallery);
+$("ip").addEventListener("keydown", function(e){ if(e.key === "Enter") loadGallery(); });
+$("btn-back").addEventListener("click", function(){ showPage("home"); });
+$("btn-home").addEventListener("click", function(){ showPage("home"); });
+$("btn-refresh").addEventListener("click", function(){
+  setStatus("gal-status", t("loading"));
+  fetch("/api/list?" + qs()).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+  .then(function(res){
+    if(!res.ok){ setStatus("gal-status", errText(res.j.error), true); return; }
+    items = res.j.items || [];
+    var keep = {};
+    items.forEach(function(it){ if(selected[it.path]) keep[it.path]=true; });
+    selected = keep;
+    buildFilter();
+    renderGallery();
+  }).catch(function(){ setStatus("gal-status", t("loadFail"), true); });
+});
+$("folder-filter").addEventListener("change", renderGallery);
+$("btn-clear-sel").addEventListener("click", function(){ selected = {}; renderGallery(); });
+$("btn-del-sel").addEventListener("click", function(){
+  askDelete(items.filter(function(it){ return selected[it.path]; }));
+});
+$("btn-zip").addEventListener("click", function(){
+  var paths = selPaths();
+  if(!paths.length) return;
+  var url = "/api/zip?" + qs() + paths.map(function(p){ return "&p=" + encodeURIComponent(p); }).join("");
+  startDownload(url, "vita-screenshots.zip");
+});
+$("btn-quit").addEventListener("click", function(){
+  fetch("/api/quit").catch(function(){});
+  document.body.innerHTML = "";
+  var p = document.createElement("p");
+  p.style.cssText = "padding:24px;font-family:sans-serif";
+  p.textContent = t("quitMsg");
+  document.body.appendChild(p);
+});
+$("lang-sel").addEventListener("change", function(){
+  LANG = $("lang-sel").value;
+  try{ localStorage.setItem("vita_gal_lang", LANG); }catch(e){}
+  applyLang();
+});
+
+// Android の戻るボタン用: 閉じる/戻ることができたら true
+window.__vitaBack = function(){
+  if($("dl-bg").classList.contains("open")) return true;
+  if($("dlg-bg").classList.contains("open")){ closeDlg(); return true; }
+  if($("viewer-bg").classList.contains("open")){ closeViewer(); return true; }
+  if(!$("page-gallery").classList.contains("hidden")){ showPage("home"); return true; }
+  return false;
+};
+
+loadConn();
+applyLang();
+showPage("home");
+</script>
+</body>
+</html>

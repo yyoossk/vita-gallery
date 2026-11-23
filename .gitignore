@@ -1,0 +1,8 @@
+dist/
+build/
+*.zip
+*.apk
+*.exe
+keystore.jks
+.vitagallery-webview2/
+verify/page-script.js
