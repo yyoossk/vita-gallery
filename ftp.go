@@ -353,7 +353,9 @@ func (s *vitaSession) size(abs string) (int64, bool) {
 
 func (s *vitaSession) dele(abs string) error {
 	code, _ := s.cmd("DELE " + abs)
-	if code != 250 {
+	// VitaShell の FTP (libftpvita) は削除成功で 250 ではなく
+	// "226 File deleted." を返す。2xx は成功として扱う。
+	if code < 200 || code >= 300 {
 		return fmt.Errorf("DELE: %d", code)
 	}
 	return nil

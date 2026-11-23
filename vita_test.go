@@ -206,7 +206,7 @@ func (f *fakeFTP) serve(c net.Conn) {
 			}
 			f.mu.Unlock()
 			if ok {
-				send("250 deleted")
+				send("226 File deleted.") // 実機の libftpvita と同じ応答
 			} else {
 				send("550 no")
 			}
