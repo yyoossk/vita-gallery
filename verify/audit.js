@@ -35,13 +35,19 @@ function makeDom(navLang) {
       window.URL.revokeObjectURL = () => {};
       window.EventSource = function(url) { this.url = url; this.closed = false; window.__es = this; };
       window.EventSource.prototype.close = function() { this.closed = true; };
+      window.__listCalls = 0;
+      window.__serverItems = JSON.parse(JSON.stringify(LIST.items));
       window.fetch = (url, opts) => {
         const u = String(url);
         if (u.startsWith("/api/list")) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(JSON.stringify(LIST))) });
+          window.__listCalls++;
+          const items = JSON.parse(JSON.stringify(window.__serverItems));
+          const folders = new Set(items.map(i => i.folder)).size;
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ items, count: items.length, folders, root: LIST.root }) });
         }
         if (u.startsWith("/api/delete-many")) {
           const body = JSON.parse(opts.body);
+          window.__serverItems = window.__serverItems.filter(i => !body.paths.includes(i.path));
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ deleted: body.paths.length, failed: [] }) });
         }
         if (u.startsWith("/api/dlstatus")) {
@@ -170,16 +176,30 @@ function makeDom(navLang) {
   d.getElementById("dlg-ok").click();
   await tick();
 
-  // 選択削除
+  // 選択削除 → 削除後に自動で一覧を取り直す
+  const callsBeforeBulk = window.__listCalls;
   d.getElementById("btn-del-sel").click();
   await tick();
   assert(d.getElementById("dlg-bg").classList.contains("open"), "delete confirm dialog opens");
   assert(d.getElementById("dlg-msg").textContent.includes("削除"), "confirm dialog mentions delete");
   d.getElementById("dlg-ok").click();
-  await tick(); await tick();
+  await tick(); await tick(); await tick();
   assert(d.querySelectorAll(".item").length === 3, "1 item removed after delete");
+  assert(window.__listCalls === callsBeforeBulk + 1, "list re-fetched automatically after bulk delete");
   assert(d.getElementById("dlg-msg").textContent.includes("削除しました"), "result dialog shows deleted");
   d.getElementById("dlg-ok").click();
+
+  // 単体削除 (カードの削除ボタン) → こちらも自動で取り直す
+  const callsBeforeSingle = window.__listCalls;
+  d.querySelector('.item [data-op="del"]').click();
+  await tick();
+  assert(d.getElementById("dlg-bg").classList.contains("open"), "single delete confirm opens");
+  d.getElementById("dlg-ok").click();
+  await tick(); await tick(); await tick();
+  assert(d.querySelectorAll(".item").length === 2, "1 item removed after single delete");
+  assert(window.__listCalls === callsBeforeSingle + 1, "list re-fetched automatically after single delete");
+  d.getElementById("dlg-ok").click();
+  await tick();
 
   // Android 戻るボタン用フック: ギャラリーではホームへ戻り true、ホームでは false
   assert(window.__vitaBack() === true, "__vitaBack true on gallery");

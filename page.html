@@ -424,6 +424,21 @@ function askDelete(list){
   showDlg(tf("delConfirm", {n: list.length}) + "\n\n" + names, t("delDo"), function(){ doDelete(list); }, true);
 }
 
+// サーバーから一覧を取り直して表示を更新する (更新ボタンと削除後の自動更新で共用)
+function refreshGallery(after){
+  fetch("/api/list?" + qs()).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+  .then(function(res){
+    if(!res.ok){ if(after) after(false, res.j && res.j.error); return; }
+    items = res.j.items || [];
+    var keep = {};
+    items.forEach(function(it){ if(selected[it.path]) keep[it.path]=true; });
+    selected = keep;
+    buildFilter();
+    renderGallery();
+    if(after) after(true);
+  }).catch(function(){ if(after) after(false); });
+}
+
 function doDelete(list){
   var paths = list.map(function(it){ return it.path; });
   setStatus("gal-status", t("deleting"));
@@ -431,19 +446,25 @@ function doDelete(list){
     body: JSON.stringify({ip: ip(), port: parseInt(port(),10)||1337, paths: paths})})
   .then(function(r){ return r.json(); })
   .then(function(j){
-    var gone = {};
-    paths.forEach(function(p){ gone[p]=true; });
-    if(j.failed && j.failed.length){ j.failed.forEach(function(p){ delete gone[p]; }); }
-    items = items.filter(function(it){ return !gone[it.path]; });
     paths.forEach(function(p){ delete selected[p]; });
     closeViewer();
-    buildFilter();
-    renderGallery();
-    if(j.failed && j.failed.length){
-      showDlg(tf("delFailed", {n: j.failed.length}) + "\n" + j.failed.join("\n"), t("ok"), null, false);
-    } else {
-      showDlg(tf("deleted", {n: j.deleted}), t("ok"), null, false);
-    }
+    // 削除できたら自動で一覧を取り直す。取り直しに失敗したときは
+    // ローカルで消して表示だけでも合わせる。
+    refreshGallery(function(ok){
+      if(!ok){
+        var gone = {};
+        paths.forEach(function(p){ gone[p]=true; });
+        if(j.failed && j.failed.length){ j.failed.forEach(function(p){ delete gone[p]; }); }
+        items = items.filter(function(it){ return !gone[it.path]; });
+        buildFilter();
+        renderGallery();
+      }
+      if(j.failed && j.failed.length){
+        showDlg(tf("delFailed", {n: j.failed.length}) + "\n" + j.failed.join("\n"), t("ok"), null, false);
+      } else {
+        showDlg(tf("deleted", {n: j.deleted}), t("ok"), null, false);
+      }
+    });
   }).catch(function(){ setStatus("gal-status", t("delFail"), true); });
 }
 
@@ -453,16 +474,7 @@ $("btn-back").addEventListener("click", function(){ showPage("home"); });
 $("btn-home").addEventListener("click", function(){ showPage("home"); });
 $("btn-refresh").addEventListener("click", function(){
   setStatus("gal-status", t("loading"));
-  fetch("/api/list?" + qs()).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
-  .then(function(res){
-    if(!res.ok){ setStatus("gal-status", errText(res.j.error), true); return; }
-    items = res.j.items || [];
-    var keep = {};
-    items.forEach(function(it){ if(selected[it.path]) keep[it.path]=true; });
-    selected = keep;
-    buildFilter();
-    renderGallery();
-  }).catch(function(){ setStatus("gal-status", t("loadFail"), true); });
+  refreshGallery(function(ok, err){ if(!ok) setStatus("gal-status", err ? errText(err) : t("loadFail"), true); });
 });
 $("folder-filter").addEventListener("change", renderGallery);
 $("btn-clear-sel").addEventListener("click", function(){ selected = {}; renderGallery(); });
